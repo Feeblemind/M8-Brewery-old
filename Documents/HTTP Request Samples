@@ -1,0 +1,141 @@
+Setting up the TempMgr...Done!
+Setting up SSR Outputs...calling updateSSR()...Done!
+Setting up web Server...Starting server...Done!
+Setting up the PID...Done!
+Free Memory = 214
+Leaving Setup
+V
+
+Processing "V"
+DEBUG MODE!
+V>d
+
+Processing "d"
+5569
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.19,Targ[1]=0.00,PID[1]=-927.50
+SSR State:0%/0j
+Free Memory = 191
+*******************************
+V>d
+
+Processing "d"
+13212
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 191
+*******************************
+V>D
+
+Processing "D"
+VD>15120
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+16157
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+17195
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.25,Targ[1]=0.00,PID[1]=-930.00
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+18233
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+19271
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.25,Targ[1]=0.00,PID[1]=-930.00
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+20310
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 209
+*******************************
+D
+
+Processing "D"
+V>d
+
+Processing "d"
+22667
+Curr[0]=20.25,Targ[0]=0.00,PID[0]=-810.00
+Curr[1]=23.31,Targ[1]=0.00,PID[1]=-932.50
+SSR State:0%/0j
+Free Memory = 191
+*******************************
+V>Got a web client
+GET / HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Got a web client
+GET /favicon.ico HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Got a web client
+GET /temp HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Got a web client
+GET /favicon.ico HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Got a web client
+GET /yournewtemp?newTemp=70 HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+Referer: http://m8.dyndns-server.com/temp
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+Got a web client
+GET /favicon.ico HTTP/1.1
+Host: m8.dyndns-server.com
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
+
+

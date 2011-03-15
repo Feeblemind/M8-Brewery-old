@@ -6,113 +6,121 @@
 
   M8_PID::M8_PID()
   {
-    _pGain = 0;
-    _iGain = 0;
-    _dGain = 0;
-    
-    _pTerm = 0;
-    _iTerm = 0;
-    _dTerm = 0;
-    
-    _iTermMin = 0;
-    _iTermMax = 0;
-    
-    _iTermLimited = true;
+    for ( byte i=0; i< sensorCount; i++ )
+    {
+      _info[ i ]._pGain = 0;
+      _info[ i ]._iGain = 0;
+      _info[ i ]._dGain = 0;
       
-    _error = 0;
-    _iState = 0;
-    _dState = 0;
-    
-    _lastUpdate = 0;
-    _updateInterval = 0;
-    
-    _value = 0;
+      _info[ i ]._pTerm = 0;
+      _info[ i ]._iTerm = 0;
+      _info[ i ]._dTerm = 0;
+      
+      _info[ i ]._iTermMin = 0;
+      _info[ i ]._iTermMax = 0;
+      
+      _info[ i ]._error = 0;
+      _info[ i ]._iState = 0;
+      _info[ i ]._dState = 0;
+      
+      _info[ i ]._value = 0;
+    }
   };
   
-  float M8_PID::getValue( void )
+  float M8_PID::getValue( byte sensor )
   {
-    return _value;
+    return _info[ sensor ]._value;
   }
   
-  void M8_PID::setupPID( float pGain, float iGain, float dGain, float iTermMin, float iTermMax, unsigned int updateInterval )
+  byte M8_PID::getSSRValue( byte sensor )
   {
-    setPGain( pGain );
-    setIGain( iGain );
-    setDGain( dGain );
+    float temp = getValue( sensor );
     
-    _iTermMin = iTermMin;
-    _iTermMax = iTermMax;
-    
-    if ( iTermMin == iTermMax )
-    //If they're the same don't use the limit values
-      _iTermLimited = false;
+    if ( temp > 100 )
+      temp = 100;
+    if ( temp < 0 )
+      temp = 0;
       
-    _error = 0;
-    _iState = 0;
-    _dState = 0;
-    
-    _updateInterval = updateInterval;
+    return temp;
   }
   
-  void M8_PID::calcPID( float temperature, float error )
+  void M8_PID::setupPID( byte sensor, float pGain, float iGain, float dGain, float iTermMin, float iTermMax )
+  {
+    setPGain( sensor, pGain );
+    setIGain( sensor, iGain );
+    setDGain( sensor, dGain );
+    
+    _info[ sensor ]._iTermMin = iTermMin;
+    _info[ sensor ]._iTermMax = iTermMax;
+          
+    _info[ sensor ]._error = 0;
+    _info[ sensor ]._iState = 0;
+    _info[ sensor ]._dState = 0;
+  }
+  
+  void M8_PID::calcPID( byte sensor, float temperature, float error )
   {
     // check to see if our last update wasn't that long ago
-    if ( millis() > ( _lastUpdate + _updateInterval ) )
-    {
-      _error = error;
-      
-      _pTerm = _calcPTerm();    
-      _iTerm = _calcITerm();
-      _dTerm = _calcDTerm( temperature );
-      
-      _value = ( _pTerm + _dTerm + _iTerm );
-      
-      _lastUpdate = millis();
-    }
+    _info[ sensor ]._error = error;
+    
+    _info[ sensor ]._pTerm = _calcPTerm( sensor );    
+    _info[ sensor ]._iTerm = _calcITerm( sensor );
+    _info[ sensor ]._dTerm = _calcDTerm( sensor, temperature );
+    
+    _info[ sensor ]._value = ( _info[ sensor ]._pTerm + _info[ sensor ]._dTerm + _info[ sensor ]._iTerm );
   }
   
-  float M8_PID::getPGain( void )  {    return _pGain;  };
-  float M8_PID::getIGain( void )  {    return _iGain;  };
-  float M8_PID::getDGain( void )  {    return _dGain;  };
+  float M8_PID::getPGain( byte sensor )  {    return _info[ sensor ]._pGain;  };
+  float M8_PID::getIGain( byte sensor )  {    return _info[ sensor ]._iGain;  };
+  float M8_PID::getDGain( byte sensor )  {    return _info[ sensor ]._dGain;  };
 
-  void M8_PID::setPGain( float pGain )  {    _pGain = pGain;  };
-  void M8_PID::setIGain( float iGain )  {    _iGain = iGain;  };
-  void M8_PID::setDGain( float dGain )  {    _dGain = dGain;  };
+  void M8_PID::setPGain( byte sensor, float pGain )  {    _info[ sensor ]._pGain = pGain;  };
+  void M8_PID::setIGain( byte sensor, float iGain )  {    _info[ sensor ]._iGain = iGain;  };
+  void M8_PID::setDGain( byte sensor, float dGain )  {    _info[ sensor ]._dGain = dGain;  };
   
-  float M8_PID::getPTerm( void )  {    return _pTerm;  };
-  float M8_PID::getITerm( void )  {    return _iTerm;  };
-  float M8_PID::getDTerm( void )  {    return _dTerm;  };  
+  float M8_PID::getPTerm( byte sensor )  {    return _info[ sensor ]._pTerm;  };
+  float M8_PID::getITerm( byte sensor )  {    return _info[ sensor ]._iTerm;  };
+  float M8_PID::getDTerm( byte sensor )  {    return _info[ sensor ]._dTerm;  };  
   
-  void M8_PID::setPTerm( float pTerm )  {    _pTerm = pTerm;  };
-  void M8_PID::setITerm( float iTerm )  {    _iTerm = iTerm;  };
-  void M8_PID::setDTerm( float dTerm )  {    _dTerm = dTerm;  };
+  void M8_PID::setPTerm( byte sensor, float pTerm )  {    _info[ sensor ]._pTerm = pTerm;  };
+  void M8_PID::setITerm( byte sensor, float iTerm )  {    _info[ sensor ]._iTerm = iTerm;  };
+  void M8_PID::setDTerm( byte sensor, float dTerm )  {    _info[ sensor ]._dTerm = dTerm;  };
     
-  float M8_PID::_calcPTerm( void )
+  float M8_PID::_calcPTerm( byte sensor )
   {
-    return ( _pGain * _error );
+    return ( _info[ sensor ]._pGain * _info[ sensor ]._error );
   }
   
-  float M8_PID::_calcITerm( void )
+  float M8_PID::_calcITerm( byte sensor )
   {
-    _iState += _error;
+    _info[ sensor ]._iState += _info[ sensor ]._error;
     
-    if ( _iTermLimited )
-      if ( _iState > _iTermMax )
-        _iState = _iTermMax;
-      else if ( _iState < _iTermMin )
-        _iState = _iTermMin;
+    if ( _iTermLimited( sensor ) )
+      if ( _info[ sensor ]._iState > _info[ sensor ]._iTermMax )
+        _info[ sensor ]._iState = _info[ sensor ]._iTermMax;
+      else if ( _info[ sensor ]._iState < _info[ sensor ]._iTermMin )
+        _info[ sensor ]._iState = _info[ sensor ]._iTermMin;
       
-    return ( _iGain * _iState );
+    return ( _info[ sensor ]._iGain * _info[ sensor ]._iState );
   }
   
-  float M8_PID::_calcDTerm( float temp )
+  float M8_PID::_calcDTerm( byte sensor, float temp )
   {
     float tempDTerm;
     
-    tempDTerm = _dGain * ( _dState - temp );
+    tempDTerm = _info[ sensor ]._dGain * ( _info[ sensor ]._dState - temp );
     
-    _dState = temp;
+    _info[ sensor ]._dState = temp;
     
     return ( tempDTerm );
+  };
+  
+  boolean M8_PID::_iTermLimited( byte sensor )
+  {
+    if ( ( _info[ sensor ]._iTermMin == _info[ sensor ]._iTermMax ) ||  //If they're the same don't use the limit values
+         ( _info[ sensor ]._iTermMax < _info[ sensor ]._iTermMin ) )    //If they're invald don't limit either
+      return false;    
+    else
+      return true;
   };
 #endif //Define M8_PID

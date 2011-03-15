@@ -2,8 +2,9 @@
 #define PIDClass_h
 
 #include "WProgram.h"
+#include "M8_Constants.h"
 
-class M8_PID
+struct M8_PID_Info
 {
   float _pGain;
   float _iGain;
@@ -18,46 +19,49 @@ class M8_PID
   float _iState;
   float _dState;
   
-  boolean _iTermLimited;
   float _iTermMax;
   float _iTermMin;
-
-  unsigned int _lastUpdate;
-  unsigned int _updateInterval;
   
   float _value;
+};
+
+class M8_PID
+{
+
+  M8_PID_Info _info[ sensorCount ];
 
   public :
 
 	  M8_PID();
   
-	  float getValue( void );
+	  float getValue( byte sensor );
+          byte getSSRValue( byte sensor );
   
-	  void setupPID( float pGain, float iGain, float dGain, float iTermMin, float iTermMax, unsigned int updateInterval );
+	  void setupPID( byte sensor, float pGain, float iGain, float dGain, float iTermMin, float iTermMax );
   
-	  void calcPID( float temperature, float error );
+	  void calcPID( byte sensor, float temperature, float error );
   
-	  float getPGain( void );
-	  float getIGain( void );
-	  float getDGain( void );
+	  float getPGain( byte sensor );
+	  float getIGain( byte sensor );
+	  float getDGain( byte sensor );
 
-	  void setPGain( float pGain );
-	  void setIGain( float iGain );
-	  void setDGain( float dGain );
+	  void setPGain( byte sensor, float pGain );
+	  void setIGain( byte sensor, float iGain );
+	  void setDGain( byte sensor, float dGain );
   
-	  float getPTerm( void );
-	  float getITerm( void );
-	  float getDTerm( void );
+	  float getPTerm( byte sensor );
+	  float getITerm( byte sensor );
+	  float getDTerm( byte sensor );
   
-	  void setPTerm( float pTerm );
-	  void setITerm( float iTerm );
-	  void setDTerm( float dTerm );
-  
-  
+	  void setPTerm( byte sensor, float pTerm );
+	  void setITerm( byte sensor, float iTerm );
+	  void setDTerm( byte sensor, float dTerm );
+    
   private :
   
-	  float _calcPTerm( void );  
-	  float _calcITerm( void );  
-  	  float _calcDTerm( float temp );
+          boolean _iTermLimited( byte sensor );
+	  float _calcPTerm( byte sensor );  
+	  float _calcITerm( byte sensor );  
+  	  float _calcDTerm( byte sensor, float temp );
 };
 #endif // ifndef PIDClass_h

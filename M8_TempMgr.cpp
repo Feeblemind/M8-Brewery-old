@@ -10,6 +10,8 @@
 M8_TempMgr::M8_TempMgr()
 {
 
+  
+//These both should be in EEPROM  
 _addr[0][0] = 0x10;
 _addr[0][1] = 0xF3;
 _addr[0][2] = 0x08;
@@ -30,7 +32,7 @@ _addr[1][7] = 0xB6; //This is the bread board probe
 
 	_nextRead = 0;
 
-	for ( int i=0; i<sensorCount; i++ )
+	for ( byte i=0; i<sensorCount; i++ )
 	{
 		_temp[i] = 0;
 		_targetTemp[i] = 0;
@@ -42,7 +44,7 @@ void M8_TempMgr::setupTempMgr( OneWire *ow )
   _owBus = ow;
 }
 
-float M8_TempMgr::getError( int sensor ) // Helper function for the PID, returns the error
+float M8_TempMgr::getError( byte sensor ) // Helper function for the PID, returns the error
 {
   return ( _targetTemp[ sensor ] - _temp[ sensor ] );
 }
@@ -69,22 +71,22 @@ boolean M8_TempMgr::update( void ) // Tells this chip to start temp conversion
 	return newData;
 };
 
-float M8_TempMgr::getTempC( int sensor )
+float M8_TempMgr::getTempC( byte sensor )
 {
 	return _temp[ sensor ];
 };
 
-float M8_TempMgr::getTempF( int sensor )
+float M8_TempMgr::getTempF( byte sensor )
 {
 	return _c2f(_temp[ sensor ]);
 };
 
-float M8_TempMgr::getTargetTemp( int sensor )
+float M8_TempMgr::getTargetTemp( byte sensor )
 {
 	return _targetTemp[ sensor ];
 };
 
-void M8_TempMgr::setTargetTemp( int sensor, float temp )
+void M8_TempMgr::setTargetTemp( byte sensor, float temp )
 {
 	_targetTemp[ sensor ] = temp;
 };

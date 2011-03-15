@@ -2,13 +2,10 @@
 #define M8_TempMgr_h
 
 #include "WProgram.h"
+#include "M8_Constants.h"
 
 //Thermometer includes
 #include <OneWire.h>
-
-#define sensorCount        2 // The number of sensors on the bus
-#define oneWirePin         5 // The pin the onewire bus is on.
-#define tempReadDelay      1000 // number of millis() to delay after request for temp read.
 
 class M8_TempMgr {  
   
@@ -28,13 +25,13 @@ class M8_TempMgr {
 
 		boolean update( void ); // Tells this chip to start temp conversion
 
-		float getTempC( int sensor );
-		float getTempF( int sensor );
+		float getTempC( byte sensor );
+		float getTempF( byte sensor );
 
-                float getError( int sensor );
+                float getError( byte sensor );
 
-		float getTargetTemp( int sensor );
-		void setTargetTemp( int sensor, float temp );
+		float getTargetTemp( byte sensor );
+		void setTargetTemp( byte sensor, float temp );
 
 	private:
 		void _writeTimeToScratchpad(byte* address); // Function to tell the temp sensors to stat conversion

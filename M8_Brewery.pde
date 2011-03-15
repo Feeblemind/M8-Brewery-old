@@ -8,12 +8,18 @@
 #include <Server.h>
 #include <Udp.h>
 
+//Store stuff in program memory
+#include <avr/pgmspace.h>
+
 //My Libraries
 #include "M8_Constants.h" //Include the constants
+
+#include "MemoryFree.h" //Include a free memory checker
 
 #include "M8_PID.h" //Include my PID class
 #include "M8_SSR.h" //Include my SSR handling class
 #include "M8_TempMgr.h" //Include my 12BS20 oneWire manager class
+#include "M8_Web.h" // Include my Web Server
 
 //// ******************  Hookup Diagram
 //   0 RX         "BT TX",
@@ -47,11 +53,11 @@ String inputString; //Test Command
 boolean EOS = false; //End of String
 boolean debugMode = false; //Are we in debug mode? 
 
-//// *******************  Ethernet variables 
-byte mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x14, 0x14};
-byte ip[]      = { 192, 168,   1, 120 };
-byte gateway[] = { 192, 168,   1,   1 };	
-byte subnet[]  = { 255, 255, 255,   0 };
+//// *******************  Ethernet variables lets store these in program memory
+PROGMEM byte mac[]     = { 0x90, 0xA2, 0xDA, 0x00, 0x14, 0x14};
+PROGMEM byte ip[]      = { 192, 168,   1, 120 }; // Should be EEPROM
+PROGMEM byte gateway[] = { 192, 168,   1,   1 }; // Should be EEPROM
+PROGMEM byte subnet[]  = { 255, 255, 255,   0 }; // Should be EEPROM
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use 
@@ -62,7 +68,10 @@ Server server( 80 );
 class M8_SSR SSR;
 
 //// *******************  PID Controller variables 
-class M8_PID PID[ sensorCount ]; //The results from updatePID(temp,targetTemp);
+class M8_PID PID; //The results from updatePID(temp,targetTemp);
+
+//// *******************  Web Server
+class M8_WebServer webServer;
 
 //// *******************  TempMgr variables
 OneWire ow( oneWirePin );
@@ -77,7 +86,9 @@ void setup(void)
   
   Serial.print("Setting up the TempMgr...");
   tempMgr.setupTempMgr( &ow );  // Send the tempMgr a One Wire object
-  Serial.println("Done!");
+  Serial.print("SensorCount = ");
+  Serial.print( sensorCount );
+  Serial.println("...Done!");
   
   Serial.print("Setting up SSR Outputs...");  
   SSR.setupSSR( SSRPin );
@@ -90,16 +101,21 @@ void setup(void)
   Serial.print("Setting up web Server...");
   Ethernet.begin(mac, ip, gateway, subnet);
   Serial.print("Starting server...");
-  server.begin();  
+  server.begin();
+  Serial.print("Setting up Web Server ...");
+  webServer.setupWebServer( &server, &PID, &SSR, &tempMgr);
   Serial.println("Done!");
-  
+
   //setup the PID
   Serial.print("Setting up the PID...");
-  for ( int i=0; i< sensorCount; i++ )
+  for ( byte i=0; i< sensorCount; i++ )
   {
-    PID[i].setupPID( defaultPGain, defaultIGain, defaultDGain, defaultIStateMin, defaultIStateMax, defaultUpdateInterval );
+    PID.setupPID( i, defaultPGain, defaultIGain, defaultDGain, defaultIStateMin, defaultIStateMax );
   };
   Serial.println("Done!");
+    
+  Serial.print("Free Memory = ");
+  Serial.println( freeMemory() );    
     
   Serial.println("Leaving Setup");
 }
@@ -134,48 +150,22 @@ void appendSerialData ( void )
      //No Data to input
    }
 }
-      
-void doSetPIDGain( String input )
-{
-/*
-  uses input string to set a PID gain value
-  
-*/
-  unsigned int temp, temp1;
-  temp1 = input.indexOf(';');  
-  
-  if ( input[0] != 'P' )
-    return; // Should be an error
-    
-  switch ( input[1] ) 
-  {
-    case 'p':
-      //read in a new pGain
-      break;
-    case 'i':
-      //read in a new iGain  
-      break;
-    case 'd':
-      //read in a new dGain
-      break;
-  }  
-};
-  
-void doSetHoldTemp( String input )
+        
+void doSetTemp( String input )
 /*
   uses input string to set a desired thermometer's target temp and hold time
   
   input string should have the following format:
-  H#0C20;
-  H - the set hold command
+  T#0C20;
+  T - the set hold command
   #0 - the theremometer to set, in this case  0
   C20 - the temp (in C) to set, in this case 20
   ; - the end of the command
 */
 {
-  int thermometer = -1; // Which theremometer are we adjusting?
-  int setTemp = -1;     // The temp to hold at
-  int temp, temp2, temp3; // Throw away varibles
+  byte thermometer = -1; // Which theremometer are we adjusting?
+  byte setTemp = -1;     // The temp to hold at
+  byte temp, temp2, temp3; // Throw away varibles
   String str; // Throw away string
 
   if (debugMode)
@@ -195,17 +185,17 @@ void doSetHoldTemp( String input )
   if ( debugMode )
   {
     Serial.print("index of #=");
-    Serial.print(temp);
+    Serial.print(temp,DEC);
     Serial.print(" C=");
-    Serial.print(temp2);
+    Serial.print(temp2,DEC);
     Serial.print(" ;=");
-    Serial.print(temp3); 
+    Serial.print(temp3,DEC); 
   }
   
   if ( ( temp < 0 ) || ( temp2 < 0 ) || ( temp3 < 0 ) )
   {
     //Error!
-    Serial.println("ERROR: H Command not properly formated!");
+    Serial.print("ERROR: H Command not properly formated!");
     Serial.print("  ");
     Serial.println( input );
 
@@ -235,18 +225,10 @@ void doSetHoldTemp( String input )
   if ( debugMode )
     Serial.print(" Reseting PID ");
   
-  PID[ thermometer ].setupPID( defaultPGain, defaultIGain, defaultDGain, defaultIStateMin, defaultIStateMax, defaultUpdateInterval );
+  PID.setupPID( thermometer, defaultPGain, defaultIGain, defaultDGain, defaultIStateMin, defaultIStateMax );
   
   if ( debugMode )
     Serial.println(" ...Done with H");
-}
-
-// Just a utility function to nicely format an IP address.
-const char* ip_to_str(const uint8_t* ipAddr)
-{
-  static char buf[16];
-  sprintf(buf, "%d.%d.%d.%d\0", ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
-  return buf;
 }
 
 //**************************************************************************************************
@@ -259,10 +241,9 @@ void doCommand( void )
   Serial.println("\"");
   
   switch ( inputString[0] )
-  {
-    case 'n' : // Dump some network info
-      Serial.println("IP addr = ");
-      Serial.println(ip_to_str(ip));
+  {      
+    case 'H' :
+      doSetTemp( inputString );
       break;
       
     case 'D' : // Toggle Data Dump, tells the program to output the data
@@ -272,11 +253,7 @@ void doCommand( void )
     case 'd' : // Do one dump
       doDataDump();
       break;
-      
-    case 'P' : //Dump PID info
-//      PID[0].doDebug();
-      break;
-      
+            
     case 'G' : // Toggle Graph dump mode
       Serial.println("Be sure that you've toggled everything else off");
       
@@ -301,8 +278,8 @@ void doCommand( void )
         Serial.println("DEBUG MODE!");
       break;
       
-    case 'H' : // Set hold temp
-        doSetHoldTemp( inputString );
+    case 'T' : // Set hold temp
+        doSetTemp( inputString );
       break;
       
     case 'J' : // Jiffies!
@@ -323,12 +300,7 @@ void doCommand( void )
       Serial.print(" New Power level=");
       Serial.println( SSR.getPower() );
       break;
-      
-    case 'j':
-      Serial.print( "Jiffies = " );
-      Serial.println( SSR.getJiffy() );
-      break;
-      
+            
 // ***** DEBUG MODE COMMANDS *****
             
   }
@@ -360,30 +332,34 @@ void doDataDump( void )
 {
   Serial.println( millis() );
   
-  for (int i=0; i< sensorCount; i++)
+  for (byte i=0; i< sensorCount; i++)
   {
     Serial.print("Curr[");
-    Serial.print(i);
+    Serial.print(i, DEC);
     Serial.print("]=");
     Serial.print(tempMgr.getTempC(i));
     
     Serial.print(",Targ[");
-    Serial.print(i);
+    Serial.print(i, DEC);
     Serial.print("]=");
     Serial.print(tempMgr.getTargetTemp(i));
         
     Serial.print(",PID[");
-    Serial.print(i);
+    Serial.print(i, DEC);
     Serial.print("]=");
-    Serial.print( PID[i].getValue() );
-
-    Serial.print(",heat");
-    Serial.print( SSR.getPower() );
-    Serial.print("/");
-    Serial.print( SSR.getJiffy() );
+    Serial.print( PID.getValue( i ) );
     
     Serial.println();
   };
+  
+  Serial.print("SSR State:");
+  Serial.print( SSR.getPower() );
+  Serial.print("%/");
+  Serial.print( SSR.getJiffy() );
+  Serial.println("j");
+  
+  Serial.print("Free Memory = ");
+  Serial.println( freeMemory() );    
   
   Serial.println("*******************************");
 }
@@ -391,16 +367,13 @@ void doDataDump( void )
 void doGraphModeHeader( void )
 {
   Serial.print("Time,"); 
-  for (int i=0;i<sensorCount;i++)
+  for (byte i=0;i<sensorCount;i++)
   {
     Serial.print("Temp ");
     Serial.print(i);
     Serial.print(", Target ");
     Serial.print(i);
-    
-    Serial.print(", Hold Count ");
-    Serial.print(i);
-    
+        
     Serial.print(", PID Value ");
     Serial.print(i);
     Serial.print(", P Term ");
@@ -415,14 +388,9 @@ void doGraphModeHeader( void )
     Serial.print(i);
     Serial.print(", D Gain ");
     Serial.print(i);
-
-    
-    Serial.print(", SSR Power ");
-    Serial.print(i);
-    
-    Serial.print(", SSR Jiffy ");
-    Serial.print(i);
   }
+  Serial.print(", SSR Power ");    
+  Serial.print(", SSR Jiffy ");
 }
  
 void doGraphMode( void )
@@ -430,185 +398,75 @@ void doGraphMode( void )
   Serial.print( millis() );
   Serial.print(",");
   
-  for (int i=0; i< sensorCount; i++)
+  for (byte i=0; i< sensorCount; i++)
   {
     Serial.print(tempMgr.getTempC(i));
     Serial.print(",");
     Serial.print(tempMgr.getTargetTemp(i));
     Serial.print(",");
         
-    Serial.print( PID[i].getValue() );
+    Serial.print( PID.getValue(i) );
     Serial.print(",");
 
-    Serial.print( PID[i].getPTerm() );
+    Serial.print( PID.getPTerm(i) );
     Serial.print(",");
-    Serial.print( PID[i].getITerm() );
+    Serial.print( PID.getITerm(i) );
     Serial.print(",");
-    Serial.print( PID[i].getDTerm() );
+    Serial.print( PID.getDTerm(i) );
     Serial.print(",");    
     
-    Serial.print( PID[i].getPGain() );
+    Serial.print( PID.getPGain(i) );
     Serial.print(",");
-    Serial.print( PID[i].getIGain() );
+    Serial.print( PID.getIGain(i) );
     Serial.print(",");
-    Serial.print( PID[i].getDGain() );
+    Serial.print( PID.getDGain(i) );
     Serial.print(",");    
-    
-    Serial.print( SSR.getPower() );
-    Serial.print(",");
-    Serial.print( SSR.getJiffy() );
-    Serial.print(",");
   };
+
+  Serial.print( SSR.getPower() );
+  Serial.print(",");
+  Serial.print( SSR.getJiffy() );
   
   Serial.println();
 };
 
 //**************************************************************************************************
-//                                             WEB PAGES!
-//**************************************************************************************************  
-void doListenForClients() {
-  // listen for incoming clients
-  Client client = server.available();
-    
-  if (client) {
-    if ( debugMode)
-      Serial.println("Got a web client");
-      
-    // an http request ends with a blank line   
-    boolean currentLineIsBlank = true;
-    
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        Serial.print(c);
-        // if you've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so you can send a reply
-        if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println();
-          client.println("<html>");
-          client.println("<head>");
-          client.println("  <title>M8 Brewery</title>");
-//          client.print("  <meta http-equiv=\"refresh\" content=\"");
-//          client.print( webPageUpdateTime );
-//          client.println("\">");
-          client.println("</head>");
-          
-          client.println("<body>");
-          // print the current readings, in HTML format:
-          client.println( "<h3> Current Status </h3>" );
-          
-          client.print( "<h5> Time is " );
-          client.print( millis() );
-          client.println( "</h5>" );
-          
-          //Display the themrometers in a table
-          client.println("<table border=\"1\"> ");
-          client.println("<tr>");
-          client.println("<th>Sensor</th>");
-          client.println("<th>Current Temp C</th>");          
-          client.println("<th>Target Temp</th>");
-          client.println("<th>PID Result</th>");
-          client.println("<th>Heat Power (%/j)</th>");
-          client.println("</tr>");
-          
-          for (int i=0; i< sensorCount; i++)
-          {
-            client.print("<tr>");
-            
-            client.print("<td>");
-            client.print(i);
-            client.print("</td>");
-            
-            client.print("<td>");
-            client.print(tempMgr.getTempC(i));
-            client.print("</td>");
-            
-            client.print("<td>");
-            client.print(tempMgr.getTargetTemp(i));
-            client.print("</td>");
-        
-            client.print("<td>");
-            client.print( PID[i].getValue() );
-            client.print("</td>");
-
-            client.print("<td>");
-            client.print( SSR.getPower() );
-            client.print("% / ");
-            client.print( SSR.getJiffy() );
-            client.print("</td>");
-            client.println("</tr>");
-          };
-
-          client.println("</table>");
-          
-          client.println("<form name=\"input\" action=\"yournewtemp\" method=\"get\">");
-          client.println("New Target Temp: <input type=\"text\" name=\"newTemp\" />");
-          client.println("<input type=\"submit\" value=\"Submit\" />");
-          client.println("</form>"); 
-          
-          client.println("</body>");
-          client.println("</html>");
-          
-          break;
-        }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } 
-        else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
-      }
-    }
-    // give the web browser time to receive the data
-    delay(1);
-    // close the connection:
-    client.stop();
-  }
-}  
- 
-//**************************************************************************************************
 //                                             Main Loop!
 //**************************************************************************************************
- 
 void loop(void)
-{
-  boolean newData = false; // do we have new data to dump?
-    
+{  
   // ***** Listen for incoming inputs
   appendSerialData(); // Read in serial data
-  doListenForClients(); // check for incoming Ethernet connections:
-  
-  newData = tempMgr.update();
+  // Comment out this line for a savings of almost 600 Bytes of ram
+  webServer.doListenForClients(); // check for incoming Ethernet connections:
   
   if ( EOS ) // Process any complete commands
     doCommand();
 
-  if ( newData ) // Don't need to check if we didn't update the temps       
-    for ( int i=0; i< sensorCount; i++ )
+  if ( tempMgr.update() == true ) // Don't need to check if we didn't update the temps       
+  {
+    for ( byte i=0; i< sensorCount; i++ )
     {
       // update the PID
-      PID[ i ].calcPID( tempMgr.getTempC( i ), tempMgr.getError( i ) );
+      PID.calcPID( i, tempMgr.getTempC( i ), tempMgr.getError( i ) );
       // And the SSR power level
-      SSR.setPower( PID[i].getValue() );
+      // We only have one SSR:
+      if ( i == 0 )
+        SSR.setPower( PID.getSSRValue( i ) );
+    }  
+    
+    if ( graphMode )  
+      if ( !dumpData && !debugMode )
+        doGraphMode();
+      else
+      {     
+        Serial.println("TURN OFF THE OTHER MODES!");
+        graphMode = !graphMode;
+      }
       
-      if ( graphMode )  
-        if ( !dumpData && !debugMode )
-          doGraphMode();
-        else
-        {     
-          Serial.println("TURN OFF THE OTHER MODES!");
-          graphMode = !graphMode;
-        }      
-    };
+      if ( dumpData )
+        doDataDump();
+  };
     
   updateSSR(); //Cycle the SSR(s)
-  
-  if ( dumpData && newData )
-    doDataDump();    
 }

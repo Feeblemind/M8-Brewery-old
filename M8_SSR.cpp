@@ -10,7 +10,7 @@
     _jiffy = 0;    
   }
   
-  void M8_SSR::setupSSR( unsigned int pin )
+  void M8_SSR::setupSSR( byte pin )
   {
     _pin = pin;
     
@@ -22,7 +22,7 @@
     return int( round( _jiffy * 1.6666 ) );
   };
   
-  void M8_SSR::setPower( int power )
+  void M8_SSR::setPower( byte power )
   {
     if ( power > 100 )
       power = 100;
@@ -38,19 +38,17 @@
   };
   
   void M8_SSR::update( void )
-  {
-    unsigned long millisCount = millis();
-        
-    if ( ( millisCount % 1000 ) < ( _jiffy * 16.7 ) )
+  {     
+    if ( ( millis() % 1000 ) < ( _jiffy * 16.7 ) )
       digitalWrite( _pin, HIGH );
     else
       digitalWrite( _pin, LOW );
   };
   
-  void M8_SSR::_calcJiffy( unsigned int power )
+  void M8_SSR::_calcJiffy( byte power )
   {
     //for each 1.6% power we have one jiffy
-    _jiffy = int( round( power/ 1.666666 ) );
+    _jiffy = byte( round( power/ 1.666666 ) );
   };  
 
 #endif //#ifndef M8_SSR_cpp

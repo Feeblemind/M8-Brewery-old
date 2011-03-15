@@ -5,18 +5,18 @@
 
 class M8_SSR
 {
-  unsigned int _pin;
-  unsigned int _jiffy;
+  byte _pin;
+  byte _jiffy;
   
   public:
   
   M8_SSR( );
 
-  void setupSSR( unsigned int pin );
+  void setupSSR( byte pin );
 
   unsigned int getPower( void );
   
-  void setPower( int power );
+  void setPower( byte power );
   
   unsigned int getJiffy( void );
 
@@ -24,7 +24,7 @@ class M8_SSR
     
   private:
   
-  void _calcJiffy( unsigned int power );
+  void _calcJiffy( byte power );
 };
 
 #endif //#ifndef M8_SSR_h
